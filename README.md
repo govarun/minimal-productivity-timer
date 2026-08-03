@@ -8,7 +8,9 @@ Think of it as a scheduler for your brain: the main task gets the CPU, side ques
 
 ## Preview
 
-| Focus timer | Goal editor |
+Bell is the compact widget in each crop; the surrounding dark texture represents whatever is already on your desktop.
+
+| During a focus block | Between blocks |
 | --- | --- |
 | ![Translucent circular focus timer in the top-right](docs/screenshots/timer.jpg) | ![Compact goal and duration editor in the top-right](docs/screenshots/editor.jpg) |
 
