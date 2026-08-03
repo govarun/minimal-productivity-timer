@@ -1,9 +1,33 @@
+# Swift Package Manager and build output
 .build/
-dist/
 .swiftpm/
+Packages/
+DerivedData/
+dist/
+
+# Xcode and editor-local state
+xcuserdata/
+*.xcuserstate
+.idea/
+.vscode/
+*.swp
+
+# macOS metadata
 .DS_Store
+._*
+
+# Local mock artifacts and app data
 Mock/*.png
 *.csv
 *.log
+
+# Local configuration and credentials
 .env
 .env.*
+!.env.example
+*.key
+*.pem
+*.p8
+*.p12
+*.cer
+*.mobileprovision
