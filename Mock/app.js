@@ -65,6 +65,37 @@ goalForm.addEventListener('submit', event => {
   setState('quiet');
 });
 
+document.addEventListener('keydown', event => {
+  if (activeState !== 'bell' || !event.metaKey) return;
+
+  const presetByKey = { '1': 30, '2': 45, '3': 60 };
+
+  if (event.key === '0') {
+    event.preventDefault();
+    goalInput.focus();
+    goalInput.select();
+    return;
+  }
+
+  if (presetByKey[event.key]) {
+    event.preventDefault();
+    document.querySelector(`[data-minutes="${presetByKey[event.key]}"]`).click();
+    return;
+  }
+
+  if (event.key === '4') {
+    event.preventDefault();
+    customMinutes.focus();
+    customMinutes.select();
+    return;
+  }
+
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    goalForm.requestSubmit();
+  }
+});
+
 killButton.addEventListener('click', () => {
   companion.classList.add('is-killed');
 });

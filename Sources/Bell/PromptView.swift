@@ -115,19 +115,20 @@ struct PromptView: View {
                         .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .help("Save goal")
+                .keyboardShortcut(.return, modifiers: .command)
+                .help("Start timer (⌘↩)")
                 .accessibilityLabel("Save goal")
                 .padding(.trailing, 3)
             }
 
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    durationChip(30)
-                    durationChip(45)
+                    durationChip(30, shortcut: "1")
+                    durationChip(45, shortcut: "2")
                 }
 
                 HStack(spacing: 8) {
-                    durationChip(60)
+                    durationChip(60, shortcut: "3")
                     customMinutesField
                 }
             }
@@ -136,6 +137,9 @@ struct PromptView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 18)
         .frame(width: 180, height: 152)
+        .background {
+            editorShortcuts
+        }
         .background {
             ZStack {
                 GlassMaterial()
@@ -154,12 +158,29 @@ struct PromptView: View {
         promptHovered || goalFocused || customMinutesFocused
     }
 
-    private func durationChip(_ minutes: Int) -> some View {
+    private var editorShortcuts: some View {
+        ZStack {
+            Button(action: focusGoalField) {
+                Text("Focus goal")
+            }
+            .keyboardShortcut("0", modifiers: .command)
+
+            Button(action: focusCustomMinutesField) {
+                Text("Focus custom minutes")
+            }
+            .keyboardShortcut("4", modifiers: .command)
+        }
+        .buttonStyle(.plain)
+        .frame(width: 0, height: 0)
+        .opacity(0)
+        .accessibilityHidden(true)
+    }
+
+    private func durationChip(_ minutes: Int, shortcut: KeyEquivalent) -> some View {
         let selected = !customDurationActive && timer.draftIntervalMinutes == minutes
+        let shortcutLabel = String(shortcut.character)
         return Button("\(minutes) min") {
-            timer.draftIntervalMinutes = minutes
-            customDurationActive = false
-            customMinutesFocused = false
+            selectDuration(minutes)
         }
         .font(.system(size: 10, weight: .semibold, design: .rounded))
         .foregroundStyle(Color.white.opacity(selected ? 0.84 : 0.48))
@@ -171,6 +192,8 @@ struct PromptView: View {
                 .stroke(Color.white.opacity(selected ? 0.24 : 0.10), lineWidth: 1)
         }
         .buttonStyle(.plain)
+        .keyboardShortcut(shortcut, modifiers: .command)
+        .help("\(minutes) minutes (⌘\(shortcutLabel))")
         .accessibilityLabel("\(minutes) minutes")
     }
 
@@ -222,6 +245,26 @@ struct PromptView: View {
         guard !timer.draftGoal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         goalFocused = false
         timer.commitGoal()
+    }
+
+    private func focusGoalField() {
+        customMinutesFocused = false
+        goalFocused = true
+    }
+
+    private func focusCustomMinutesField() {
+        if customMinutesText.isEmpty {
+            customMinutesText = "\(timer.draftIntervalMinutes)"
+        }
+        customDurationActive = true
+        goalFocused = false
+        customMinutesFocused = true
+    }
+
+    private func selectDuration(_ minutes: Int) {
+        timer.draftIntervalMinutes = minutes
+        customDurationActive = false
+        customMinutesFocused = false
     }
 
     private func prepareDurationEditor() {

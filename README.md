@@ -48,6 +48,19 @@ pkill -x Bell
 
 The exact interaction contract lives in [BEHAVIOR.md](BEHAVIOR.md).
 
+## Keyboard shortcuts
+
+Shortcuts work while the goal editor is visible and Bell is the active app.
+
+| Shortcut | Action |
+| --- | --- |
+| `⌘0` | Focus the goal |
+| `⌘1` | Select 30 minutes |
+| `⌘2` | Select 45 minutes |
+| `⌘3` | Select 60 minutes |
+| `⌘4` | Focus custom minutes |
+| `⌘↩` | Start the timer |
+
 ## Check
 
 ```bash
