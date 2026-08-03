@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bell companion mock</title>
+  <link rel="stylesheet" href="styles.css?v=10">
+</head>
+<body>
+  <div class="desktop" aria-hidden="true">
+    <div class="menu-bar">
+      <span class="apple">●</span>
+      <span>Notes</span>
+      <span class="menu-spacer"></span>
+      <span>Sun 10:42</span>
+    </div>
+    <div class="wallpaper-orbit orbit-one"></div>
+    <div class="wallpaper-orbit orbit-two"></div>
+    <section class="background-window">
+      <div class="window-chrome"><i></i><i></i><i></i></div>
+      <p class="eyebrow">TODAY</p>
+      <h1>Make the important thing<br>smaller and shippable.</h1>
+      <div class="note-lines"><span></span><span></span><span></span></div>
+    </section>
+  </div>
+
+  <main>
+    <section
+      class="companion"
+      id="companion"
+      data-phase="quiet"
+      aria-label="Bell focus companion"
+    >
+      <button class="kill-button" id="killButton" type="button" aria-label="Quit Bell">×</button>
+
+      <div class="timer-state" id="timerState">
+        <div class="dial-shell">
+          <svg class="dial" viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="track" cx="100" cy="100" r="88" pathLength="100"></circle>
+            <circle class="progress" id="progressRing" cx="100" cy="100" r="88" pathLength="100"></circle>
+          </svg>
+          <div class="dial-center">
+            <span class="time" id="timeText">35m</span>
+            <button class="goal-inside" id="goalDisplay" type="button" aria-label="Edit goal and duration"><b>Goal:</b> Finish the Bell overlay mock</button>
+          </div>
+        </div>
+
+      </div>
+
+      <form class="prompt-state" id="goalForm">
+        <div class="goal-entry">
+          <input id="goalInput" autocomplete="off" maxlength="110" placeholder="Highest value driver">
+          <button type="submit" aria-label="Set goal">→</button>
+        </div>
+        <div class="duration-row" role="group" aria-label="Focus duration">
+          <button class="duration-chip" type="button" data-minutes="30">30 min</button>
+          <button class="duration-chip" type="button" data-minutes="45">45 min</button>
+          <button class="duration-chip" type="button" data-minutes="60">60 min</button>
+          <label class="custom-minutes active">
+            <input id="customMinutes" type="number" min="5" max="240" step="5" value="35" aria-label="Custom minutes">
+            <span>min</span>
+          </label>
+        </div>
+      </form>
+    </section>
+
+    <nav class="mock-controls" aria-label="Preview timer states">
+      <span>Preview</span>
+      <button type="button" data-state="quiet" class="active">35 min <small>12%</small></button>
+      <button type="button" data-state="ten">10 min <small>12%</small></button>
+      <button type="button" data-state="five">5 min <small>30%</small></button>
+      <button type="button" data-state="bell">Bell <small>82%</small></button>
+    </nav>
+  </main>
+
+  <script src="app.js?v=10"></script>
+</body>
+</html>
