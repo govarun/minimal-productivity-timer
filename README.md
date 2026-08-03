@@ -1,6 +1,10 @@
 # Minimalistic Productivity Overlay
 
-Bell is a silent, local macOS focus timer. It stays as a translucent circle in the top-right, updates only every five minutes, and asks for the next highest-value goal when the block ends.
+> One foreground task. Everything else can wait for a timeslice.
+
+Bell is a least-distracting overlay timer for the age of agents. When ten things are competing for attention, it keeps one highest-value task visibly assigned to the foreground while everything else remains background work.
+
+Think of it as a scheduler for your brain: the main task gets the CPU, side quests wait in the queue, and the fastest interrupt does not get to starve the process that actually matters. Bell stays silent and translucent in the top-right, changes only every five minutes, and asks what deserves the next block when time is up.
 
 ## Preview
 
