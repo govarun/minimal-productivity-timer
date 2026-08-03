@@ -26,6 +26,7 @@ Bell is a silent, top-right focus timer that stays out of the way until a work b
 ## Controls
 
 - The overlay is draggable and starts in the top-right.
+- The overlay window is always **210 × 196 points**. The 180-point circle and the 180 × 152-point editor swap inside that fixed footprint, so changing states never moves or expands beyond the screen edge.
 - A subtle `×` remains at the top-right with a forgiving hit area; clicking it quits Bell immediately.
 - Also support normal macOS `⌘Q`, a menu-bar **Quit Bell** action, and terminal command `pkill -x Bell`.
 

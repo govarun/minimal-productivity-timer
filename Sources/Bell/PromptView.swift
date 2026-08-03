@@ -9,33 +9,28 @@ struct PromptView: View {
     @State private var customMinutesText = "35"
     @State private var customDurationActive = true
 
-    private let quietSize = CGSize(width: 230, height: 216)
-    private let promptSize = CGSize(width: 350, height: 126)
+    private let overlaySize = CGSize(width: 210, height: 196)
     private let durationPresets = [30, 45, 60]
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             if timer.isPromptVisible {
                 prompt
-                    .padding(.top, 26)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             } else {
                 dial
-                    .padding(.top, 9)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 9)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 15)
             }
 
             quitButton
-                .padding(.top, timer.isPromptVisible ? 0 : 1)
-                .padding(.trailing, timer.isPromptVisible ? 1 : 3)
+                .padding(.top, timer.isPromptVisible ? 2 : 1)
+                .padding(.trailing, timer.isPromptVisible ? 2 : 3)
         }
-        .frame(
-            width: timer.isPromptVisible ? promptSize.width : quietSize.width,
-            height: timer.isPromptVisible ? promptSize.height : quietSize.height
-        )
+        .frame(width: overlaySize.width, height: overlaySize.height)
         .background {
             WindowAccessor { window in
-                configureWindow(window, contentSize: timer.isPromptVisible ? promptSize : quietSize)
+                configureWindow(window, contentSize: overlaySize)
             }
         }
         .onAppear(perform: prepareDurationEditor)
@@ -66,9 +61,9 @@ struct PromptView: View {
                 )
                 .rotationEffect(.degrees(-90))
 
-            VStack(spacing: 14) {
+            VStack(spacing: 12) {
                 Text(timer.quietTimeText)
-                    .font(.system(size: 38, weight: .ultraLight, design: .rounded))
+                    .font(.system(size: 34, weight: .ultraLight, design: .rounded))
                     .tracking(-2.4)
                     .monospacedDigit()
                     .foregroundStyle(Color.white.opacity(timer.isFinalFiveMinutes ? 0.56 : 0.42))
@@ -76,7 +71,7 @@ struct PromptView: View {
                 goalLine
             }
         }
-        .frame(width: 198, height: 198)
+        .frame(width: 180, height: 180)
     }
 
     private var goalLine: some View {
@@ -86,11 +81,11 @@ struct PromptView: View {
                     .fontWeight(.bold)
                 Text(timer.currentGoal.isEmpty ? "—" : timer.currentGoal)
             }
-            .font(.system(size: 10, weight: .medium, design: .rounded))
+            .font(.system(size: 9, weight: .medium, design: .rounded))
             .foregroundStyle(Color.white.opacity(timer.isFinalFiveMinutes ? 0.48 : 0.33))
             .lineLimit(1)
             .truncationMode(.tail)
-            .frame(width: 144)
+            .frame(width: 132)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -99,15 +94,16 @@ struct PromptView: View {
     }
 
     private var prompt: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
+            ZStack(alignment: .trailing) {
                 TextField("Highest value driver", text: $timer.draftGoal)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .font(.system(size: 10, weight: .regular, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.92))
                     .focused($goalFocused)
                     .onSubmit(submit)
-                    .padding(.horizontal, 14)
+                    .padding(.leading, 12)
+                    .padding(.trailing, 40)
                     .frame(height: 40)
                     .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay {
@@ -117,34 +113,42 @@ struct PromptView: View {
 
                 Button(action: submit) {
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Color.black.opacity(0.90))
-                        .frame(width: 44, height: 40)
-                        .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .frame(width: 34, height: 34)
+                        .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .help("Save goal")
                 .accessibilityLabel("Save goal")
+                .padding(.trailing, 3)
             }
 
-            HStack(spacing: 6) {
-                ForEach(durationPresets, id: \.self) { minutes in
-                    durationChip(minutes)
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    durationChip(30)
+                    durationChip(45)
                 }
-                customMinutesField
+
+                HStack(spacing: 8) {
+                    durationChip(60)
+                    customMinutesField
+                }
             }
+            .frame(height: 64)
         }
-        .padding(14)
-        .frame(width: 350, height: 100)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 18)
+        .frame(width: 180, height: 152)
         .background {
             ZStack {
                 GlassMaterial()
                 Color.black.opacity(promptIsActive ? 0.58 : 0.07)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(Color.white.opacity(promptIsActive ? 0.22 : 0.12), lineWidth: 1)
         }
         .onHover { promptHovered = $0 }
@@ -163,8 +167,8 @@ struct PromptView: View {
         }
         .font(.system(size: 10, weight: .semibold, design: .rounded))
         .foregroundStyle(Color.white.opacity(selected ? 0.84 : 0.48))
-        .padding(.horizontal, 10)
-        .frame(height: 24)
+        .frame(maxWidth: .infinity)
+        .frame(height: 28)
         .background(Color.white.opacity(selected ? 0.07 : 0.025), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -194,7 +198,8 @@ struct PromptView: View {
                 .foregroundStyle(Color.white.opacity(0.40))
         }
         .padding(.horizontal, 8)
-        .frame(width: 70, height: 24)
+        .frame(maxWidth: .infinity)
+        .frame(height: 28)
         .background(Color.white.opacity(customDurationActive ? 0.07 : 0.025), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)

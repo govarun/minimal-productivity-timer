@@ -28,6 +28,7 @@ pkill -x Bell
 - Current `Goal: …` inside the round timer
 - Click `Goal: …` to edit the current goal and restart the block
 - The editor contains one `Highest value driver` field, an arrow, `30/45/60 min` chips, and a custom-minutes field
+- Timer and editor share one fixed 210 × 196 overlay footprint, preventing edge overflow when states change
 - Silent, draggable, always-on-top overlay across Spaces
 - Black, gray, and white only
 - Local CSV at `~/Library/Application Support/Bell/focus-log.csv`

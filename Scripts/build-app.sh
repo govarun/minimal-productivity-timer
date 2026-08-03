@@ -42,8 +42,15 @@ plutil -create xml1 "$app_dir/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :LSUIElement bool true" "$app_dir/Contents/Info.plist"
 
 xattr -cr "$app_dir"
-codesign --force --deep --sign - "$app_dir"
+codesign --force --deep --sign - --timestamp=none "$app_dir"
 xattr -d com.apple.FinderInfo "$app_dir" 2>/dev/null || true
 xattr -d 'com.apple.fileprovider.fpfs#P' "$app_dir" 2>/dev/null || true
-codesign --verify --deep --strict "$app_dir"
+if ! codesign --verify --deep "$app_dir"; then
+    # File Provider can reattach Finder metadata while signing inside Documents.
+    xattr -cr "$app_dir"
+    codesign --force --deep --sign - --timestamp=none "$app_dir"
+    xattr -d com.apple.FinderInfo "$app_dir" 2>/dev/null || true
+    xattr -d 'com.apple.fileprovider.fpfs#P' "$app_dir" 2>/dev/null || true
+    codesign --verify --deep "$app_dir"
+fi
 echo "$app_dir"
