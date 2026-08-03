@@ -76,16 +76,12 @@ struct PromptView: View {
 
     private var goalLine: some View {
         Button(action: timer.editCurrentGoal) {
-            HStack(spacing: 3) {
-                Text("Goal:")
-                    .fontWeight(.bold)
-                Text(timer.currentGoal.isEmpty ? "—" : timer.currentGoal)
-            }
-            .font(.system(size: 9, weight: .medium, design: .rounded))
+            Text(timer.currentGoal.isEmpty ? "—" : timer.currentGoal)
+            .font(.system(size: 11, weight: .medium, design: .rounded))
             .foregroundStyle(Color.white.opacity(timer.isFinalFiveMinutes ? 0.48 : 0.33))
             .lineLimit(1)
             .truncationMode(.tail)
-            .frame(width: 132)
+            .frame(width: 140)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

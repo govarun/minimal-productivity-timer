@@ -14,12 +14,12 @@ Bell is a silent, top-right focus timer that stays out of the way until a work b
 
 ## Goal flow
 
-- During a focus block, show the current goal inside the circle as `Goal: …`.
+- During a focus block, show the current goal inside the circle without a redundant label.
 - At 0, replace the circle with one compact row:
   - Text field placeholder: `Highest value driver`
   - Arrow button to save and begin the next block
 - Below the field, show `30 min`, `45 min`, and `60 min` chips plus a compact custom-minutes field. The chosen duration applies when the arrow is pressed.
-- Clicking `Goal: …` inside the circle opens the same editor with the current goal and duration, allowing the next block to be revised and restarted.
+- Clicking the goal inside the circle opens the same editor with the current goal and duration, allowing the next block to be revised and restarted.
 - Do not show a heading, explanatory copy, dropdown, or Skip action.
 - The prompt is lightly translucent at rest and darkens only on hover or keyboard focus.
 

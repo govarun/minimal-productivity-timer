@@ -165,15 +165,15 @@ button { color: inherit; }
 .time { font-size: 34px; font-weight: 340; line-height: 1; letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
 .goal-inside {
   display: block;
-  width: 132px;
+  width: 140px;
   margin-top: 12px;
   padding: 0;
   overflow: hidden;
   border: 0;
   color: rgba(225,225,225,calc(var(--content) * .78));
   background: transparent;
-  font-size: 9px;
-  font-weight: 480;
+  font-size: 11px;
+  font-weight: 520;
   font-family: inherit;
   line-height: 1.2;
   text-align: center;
@@ -182,7 +182,6 @@ button { color: inherit; }
   cursor: pointer;
   transition: color .16s ease;
 }
-.goal-inside b { color: rgba(242,242,242,var(--content)); font-weight: 720; }
 .goal-inside:hover,
 .goal-inside:focus-visible { color: rgba(255,255,255,calc(var(--content) * .98)); outline: none; }
 

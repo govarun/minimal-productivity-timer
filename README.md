@@ -25,8 +25,8 @@ pkill -x Bell
 - Configurable duration, defaulting to 35 minutes
 - Time and perimeter change only at five-minute boundaries
 - Very translucent until the final five minutes
-- Current `Goal: …` inside the round timer
-- Click `Goal: …` to edit the current goal and restart the block
+- Current goal inside the round timer, without a redundant label
+- Click the goal to edit it and restart the block
 - The editor contains one `Highest value driver` field, an arrow, `30/45/60 min` chips, and a custom-minutes field
 - Timer and editor share one fixed 210 × 196 overlay footprint, preventing edge overflow when states change
 - Silent, draggable, always-on-top overlay across Spaces

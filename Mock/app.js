@@ -60,7 +60,7 @@ goalForm.addEventListener('submit', event => {
   const goal = goalInput.value.trim();
   if (!goal) return;
   currentGoal = goal;
-  goalDisplay.innerHTML = `<b>Goal:</b> ${escapeHTML(goal)}`;
+  goalDisplay.textContent = goal;
   goalInput.value = '';
   setState('quiet');
 });
@@ -90,11 +90,5 @@ companion.addEventListener('pointerup', event => {
   dragging = false;
   companion.releasePointerCapture(event.pointerId);
 });
-
-function escapeHTML(value) {
-  const node = document.createElement('span');
-  node.textContent = value;
-  return node.innerHTML;
-}
 
 setState('quiet');
