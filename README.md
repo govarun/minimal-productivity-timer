@@ -2,6 +2,12 @@
 
 Bell is a silent, local macOS focus timer. It stays as a translucent circle in the top-right, updates only every five minutes, and asks for the next highest-value goal when the block ends.
 
+## Preview
+
+| Focus timer | Goal editor |
+| --- | --- |
+| ![Translucent circular focus timer in the top-right](docs/screenshots/timer.jpg) | ![Compact goal and duration editor in the top-right](docs/screenshots/editor.jpg) |
+
 ## Run
 
 Requires macOS 14 or newer and the Swift toolchain.
