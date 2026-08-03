@@ -14,6 +14,10 @@ struct BellApp: App {
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) { }
+            CommandGroup(replacing: .appTermination) {
+                Button("Quit Bell", action: timer.quit)
+                    .keyboardShortcut("q")
+            }
         }
 
         Settings {

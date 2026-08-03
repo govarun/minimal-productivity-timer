@@ -1,8 +1,15 @@
+import AppKit
 import Combine
 import Foundation
 
 @MainActor
 final class FocusTimer: ObservableObject {
+    private struct ActiveBlock {
+        let startedAt: Date
+        let plannedMinutes: Int
+        let goal: String
+    }
+
     enum DefaultsKey {
         static let interval = "intervalMinutes"
         static let currentGoal = "currentGoal"
@@ -17,14 +24,18 @@ final class FocusTimer: ObservableObject {
                 return
             }
             UserDefaults.standard.set(intervalMinutes, forKey: DefaultsKey.interval)
-            if isRunning && !isPromptVisible { resetCountdown() }
+            if isRunning && !isPromptVisible {
+                let now = Date()
+                finishActiveBlock(as: .canceled, at: now)
+                resetCountdown()
+                beginActiveBlock(at: now)
+            }
         }
     }
 
     @Published private(set) var secondsRemaining: Int
     @Published private(set) var isRunning = true
     @Published private(set) var isPromptVisible = false
-    @Published private(set) var promptedAt: Date?
     @Published private(set) var recentRecords: [FocusRecord] = []
     @Published private(set) var currentGoal: String
     @Published var draftGoal = ""
@@ -33,6 +44,7 @@ final class FocusTimer: ObservableObject {
 
     let log: FocusLog
     private var ticker: AnyCancellable?
+    private var activeBlock: ActiveBlock?
 
     init() {
         let focusLog = FocusLog()
@@ -49,9 +61,10 @@ final class FocusTimer: ObservableObject {
         secondsRemaining = interval * 60
         draftIntervalMinutes = interval
         currentGoal = defaults.string(forKey: DefaultsKey.currentGoal)
-            ?? focusLog.latestCommittedGoal()
+            ?? focusLog.latestGoal()
             ?? ""
         startTicker()
+        beginActiveBlock(at: Date())
 
         if ProcessInfo.processInfo.arguments.contains("--show-prompt") {
             DispatchQueue.main.async { [weak self] in self?.ringNow() }
@@ -92,30 +105,32 @@ final class FocusTimer: ObservableObject {
     }
 
     func restart() {
+        let now = Date()
+        finishActiveBlock(as: .canceled, at: now)
         isPromptVisible = false
         draftGoal = ""
         draftIntervalMinutes = intervalMinutes
         resetCountdown()
         isRunning = true
+        beginActiveBlock(at: now)
     }
 
     func ringNow() {
         guard !isPromptVisible else { return }
-        promptedAt = Date()
+        finishActiveBlock(as: .canceled, at: Date())
         secondsRemaining = 0
-        draftGoal = ""
-        draftIntervalMinutes = intervalMinutes
-        isPromptVisible = true
-        isRunning = false
+        presentPrompt(goal: "")
     }
 
     func editCurrentGoal() {
         guard !isPromptVisible else { return }
-        promptedAt = Date()
-        draftGoal = currentGoal
-        draftIntervalMinutes = intervalMinutes
-        isPromptVisible = true
-        isRunning = false
+        finishActiveBlock(as: .canceled, at: Date())
+        presentPrompt(goal: currentGoal)
+    }
+
+    func quit() {
+        finishActiveBlock(as: .canceled, at: Date())
+        NSApplication.shared.terminate(nil)
     }
 
     func commitGoal() {
@@ -124,14 +139,56 @@ final class FocusTimer: ObservableObject {
 
         intervalMinutes = min(max(draftIntervalMinutes, 5), 240)
 
-        let record = FocusRecord(
-            promptedAt: promptedAt ?? Date(),
-            answeredAt: Date(),
-            intervalMinutes: intervalMinutes,
-            goal: cleaned,
-            outcome: .committed
-        )
+        currentGoal = cleaned
+        UserDefaults.standard.set(cleaned, forKey: DefaultsKey.currentGoal)
+        isPromptVisible = false
+        draftGoal = ""
+        resetCountdown()
+        isRunning = true
+        beginActiveBlock(at: Date())
+    }
 
+    private func resetCountdown() {
+        secondsRemaining = intervalMinutes * 60
+    }
+
+    private func beginActiveBlock(at date: Date) {
+        let cleanedGoal = currentGoal.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedGoal.isEmpty else {
+            activeBlock = nil
+            return
+        }
+        activeBlock = ActiveBlock(
+            startedAt: date,
+            plannedMinutes: intervalMinutes,
+            goal: cleanedGoal
+        )
+    }
+
+    private func finishActiveBlock(as outcome: FocusRecord.Outcome, at date: Date) {
+        guard let activeBlock else { return }
+        self.activeBlock = nil
+
+        let plannedSeconds = activeBlock.plannedMinutes * 60
+        let elapsedSeconds = outcome == .completed
+            ? plannedSeconds
+            : max(0, min(plannedSeconds, plannedSeconds - secondsRemaining))
+
+        // Ignore zero-length interruptions so quick settings changes do not pollute the log.
+        guard outcome == .completed || elapsedSeconds > 0 else { return }
+
+        let record = FocusRecord(
+            startedAt: activeBlock.startedAt,
+            endedAt: date,
+            plannedMinutes: activeBlock.plannedMinutes,
+            elapsedSeconds: elapsedSeconds,
+            goal: activeBlock.goal,
+            outcome: outcome
+        )
+        persist(record)
+    }
+
+    private func persist(_ record: FocusRecord) {
         do {
             try log.append(record)
             recentRecords.insert(record, at: 0)
@@ -141,17 +198,13 @@ final class FocusTimer: ObservableObject {
             // FocusLog has already preserved the row for a later retry.
             lastError = "The row is saved locally and will be retried."
         }
-
-        currentGoal = cleaned
-        UserDefaults.standard.set(cleaned, forKey: DefaultsKey.currentGoal)
-        isPromptVisible = false
-        draftGoal = ""
-        resetCountdown()
-        isRunning = true
     }
 
-    private func resetCountdown() {
-        secondsRemaining = intervalMinutes * 60
+    private func presentPrompt(goal: String) {
+        draftGoal = goal
+        draftIntervalMinutes = intervalMinutes
+        isPromptVisible = true
+        isRunning = false
     }
 
     private func startTicker() {
@@ -165,7 +218,9 @@ final class FocusTimer: ObservableObject {
         if secondsRemaining > 1 {
             secondsRemaining -= 1
         } else {
-            ringNow()
+            secondsRemaining = 0
+            finishActiveBlock(as: .completed, at: Date())
+            presentPrompt(goal: "")
         }
     }
 }

@@ -34,7 +34,10 @@ Bell is a silent, top-right focus timer that stays out of the way until a work b
 
 ## Logging
 
-- Saving a goal appends one local CSV row with: timestamp, goal, configured duration, and previous block outcome.
+- Append one row when a block ends, with: start time, end time, planned minutes, clean elapsed time, status, and goal.
+- Completed blocks use the explicit status `completed ✓`; canceled blocks use `canceled` and show their actual elapsed time, such as `12m 34s`.
+- Editing, restarting, changing duration, ringing now, or quitting ends the active block as canceled; zero-length interruptions are omitted.
+- Migrate legacy goal-start rows to `started` without guessing whether they completed, and retain a local legacy backup.
 - CSV remains spreadsheet-compatible and local by default.
 - Never block the next timer because logging failed; preserve the entry locally and retry later.
 

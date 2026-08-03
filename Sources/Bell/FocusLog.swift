@@ -4,17 +4,24 @@ import Foundation
 final class FocusLog {
     let fileURL: URL
     private let pendingURL: URL
+    private let legacyBackupURL: URL
+    private let fileManager: FileManager
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, directoryURL: URL? = nil) {
+        self.fileManager = fileManager
         let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let directory = base.appendingPathComponent("Bell", isDirectory: true)
+        let directory = directoryURL ?? base.appendingPathComponent("Bell", isDirectory: true)
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         fileURL = directory.appendingPathComponent("focus-log.csv")
         pendingURL = directory.appendingPathComponent("pending-focus-log.csv")
+        legacyBackupURL = directory.appendingPathComponent("focus-log-legacy.csv")
 
         if !fileManager.fileExists(atPath: fileURL.path) {
             try? CSVCodec.header.write(to: fileURL, atomically: true, encoding: .utf8)
+        } else {
+            migrateLegacyLogIfNeeded()
         }
+        migratePendingRowsIfNeeded()
     }
 
     func append(_ record: FocusRecord) throws {
@@ -28,60 +35,60 @@ final class FocusLog {
         }
     }
 
-    func latestCommittedGoal() -> String? {
+    func latestGoal() -> String? {
         guard let contents = try? String(contentsOf: fileURL, encoding: .utf8) else { return nil }
         for line in contents.split(whereSeparator: \.isNewline).dropFirst().reversed() {
-            let fields = parseCSVLine(String(line))
-            if fields.count >= 5, fields[3] == FocusRecord.Outcome.committed.rawValue, !fields[4].isEmpty {
-                return fields[4]
-            }
+            let fields = CSVCodec.parseLine(String(line))
+            let goal = fields.count >= 6 ? fields[5] : (fields.count >= 5 ? fields[4] : "")
+            if !goal.isEmpty { return goal }
         }
         return nil
     }
 
-    private func parseCSVLine(_ line: String) -> [String] {
-        var fields: [String] = []
-        var field = ""
-        var insideQuotes = false
-        var index = line.startIndex
+    private func migrateLegacyLogIfNeeded() {
+        guard let contents = try? String(contentsOf: fileURL, encoding: .utf8) else { return }
+        let lines = contents.split(whereSeparator: \.isNewline).map(String.init)
+        guard lines.first == CSVCodec.legacyHeader else { return }
 
-        while index < line.endIndex {
-            let character = line[index]
-            if character == "\"" {
-                let next = line.index(after: index)
-                if insideQuotes, next < line.endIndex, line[next] == "\"" {
-                    field.append("\"")
-                    index = line.index(after: next)
-                    continue
-                }
-                insideQuotes.toggle()
-            } else if character == ",", !insideQuotes {
-                fields.append(field)
-                field = ""
-            } else {
-                field.append(character)
-            }
-            index = line.index(after: index)
+        if !fileManager.fileExists(atPath: legacyBackupURL.path) {
+            try? fileManager.copyItem(at: fileURL, to: legacyBackupURL)
         }
 
-        fields.append(field)
-        return fields
+        let migratedRows = lines.dropFirst().compactMap(CSVCodec.migratedLegacyRow)
+        let migratedContents = CSVCodec.header + migratedRows.joined()
+        try? migratedContents.write(to: fileURL, atomically: true, encoding: .utf8)
+    }
+
+    private func migratePendingRowsIfNeeded() {
+        guard
+            fileManager.fileExists(atPath: pendingURL.path),
+            let contents = try? String(contentsOf: pendingURL, encoding: .utf8)
+        else { return }
+
+        let lines = contents.split(whereSeparator: \.isNewline).map(String.init)
+        guard lines.contains(where: { CSVCodec.parseLine($0).count == 5 }) else { return }
+
+        let migratedRows = lines.compactMap { line -> String? in
+            let fields = CSVCodec.parseLine(line)
+            return fields.count == 5 ? CSVCodec.migratedLegacyRow(line) : line + "\n"
+        }
+        try? migratedRows.joined().write(to: pendingURL, atomically: true, encoding: .utf8)
     }
 
     private func flushPendingRows() throws {
-        guard FileManager.default.fileExists(atPath: pendingURL.path) else { return }
+        guard fileManager.fileExists(atPath: pendingURL.path) else { return }
         let pending = try Data(contentsOf: pendingURL)
         guard !pending.isEmpty else {
-            try? FileManager.default.removeItem(at: pendingURL)
+            try? fileManager.removeItem(at: pendingURL)
             return
         }
         try append(pending, to: fileURL)
-        try FileManager.default.removeItem(at: pendingURL)
+        try fileManager.removeItem(at: pendingURL)
     }
 
     private func append(_ data: Data, to url: URL, createIfNeeded: Bool = false) throws {
-        if createIfNeeded, !FileManager.default.fileExists(atPath: url.path) {
-            FileManager.default.createFile(atPath: url.path, contents: nil)
+        if createIfNeeded, !fileManager.fileExists(atPath: url.path) {
+            fileManager.createFile(atPath: url.path, contents: nil)
         }
         let handle = try FileHandle(forWritingTo: url)
         defer { try? handle.close() }

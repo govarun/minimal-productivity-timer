@@ -43,7 +43,7 @@ pkill -x Bell
 - Timer and editor share one fixed 210 × 196 overlay footprint, preventing edge overflow when states change
 - Silent, draggable, always-on-top overlay across Spaces
 - Black, gray, and white only
-- Local CSV at `~/Library/Application Support/Bell/focus-log.csv`
+- Local CSV at `~/Library/Application Support/Bell/focus-log.csv`, with `completed ✓` and clean canceled durations such as `12m 34s`
 - No accounts, analytics, network requests, or cloud storage
 
 The exact interaction contract lives in [BEHAVIOR.md](BEHAVIOR.md).
@@ -65,6 +65,6 @@ Shortcuts work while the goal editor is visible and Bell is the active app.
 
 ```bash
 swift build
-swiftc Sources/Bell/FocusRecord.swift Sources/Bell/TimerMath.swift Tests/BellTests/CSVCodecTests.swift -o .build/bell-tests
+swiftc Sources/Bell/FocusRecord.swift Sources/Bell/FocusLog.swift Sources/Bell/TimerMath.swift Tests/BellTests/CSVCodecTests.swift -o .build/bell-tests
 .build/bell-tests
 ```

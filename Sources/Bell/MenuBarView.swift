@@ -30,7 +30,7 @@ struct MenuBarView: View {
         Divider()
 
         Button("Quit Bell") {
-            NSApplication.shared.terminate(nil)
+            timer.quit()
         }
         .keyboardShortcut("q")
     }

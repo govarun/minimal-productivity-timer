@@ -2,6 +2,7 @@ import Foundation
 
 @main
 enum CSVCodecTests {
+    @MainActor
     static func main() {
         check(CSVCodec.escape("Ship the timer") == "Ship the timer", "plain goal")
         check(
@@ -10,15 +11,40 @@ enum CSVCodecTests {
         )
 
         let instant = Date(timeIntervalSince1970: 1_700_000_000)
-        let record = FocusRecord(
-            promptedAt: instant,
-            answeredAt: instant.addingTimeInterval(12),
-            intervalMinutes: 45,
+        let canceledRecord = FocusRecord(
+            startedAt: instant,
+            endedAt: instant.addingTimeInterval(754),
+            plannedMinutes: 45,
+            elapsedSeconds: 754,
             goal: "Ship Bell",
-            outcome: .committed
+            outcome: .canceled
         )
-        let row = CSVCodec.row(for: record)
-        check(row.contains(",45,committed,Ship Bell\n"), "stable CSV columns")
+        let canceledRow = CSVCodec.row(for: canceledRecord)
+        check(canceledRow.contains(",45,12m 34s,canceled,Ship Bell\n"), "clean canceled row")
+
+        let completedRecord = FocusRecord(
+            startedAt: instant,
+            endedAt: instant.addingTimeInterval(45 * 60),
+            plannedMinutes: 45,
+            elapsedSeconds: 45 * 60,
+            goal: "Ship Bell",
+            outcome: .completed
+        )
+        let completedRow = CSVCodec.row(for: completedRecord)
+        check(completedRow.contains(",45,45m,completed ✓,Ship Bell\n"), "completed marker")
+
+        check(CSVCodec.formattedDuration(seconds: 0) == "0s", "zero duration")
+        check(CSVCodec.formattedDuration(seconds: 59) == "59s", "seconds duration")
+        check(CSVCodec.formattedDuration(seconds: 60) == "1m", "minute duration")
+        check(CSVCodec.formattedDuration(seconds: 3_667) == "1h 1m 7s", "hour duration")
+
+        let legacy = "2026-01-01T00:00:00Z,2026-01-01T00:00:12Z,30,committed,Ship Bell"
+        check(
+            CSVCodec.migratedLegacyRow(legacy) == "2026-01-01T00:00:12Z,,30,,started,Ship Bell\n",
+            "legacy row migration"
+        )
+
+        checkLogMigrationAndAppend(canceledRecord: canceledRecord, completedRecord: completedRecord)
 
         check(TimerMath.displayMinutes(secondsRemaining: 35 * 60, intervalMinutes: 35) == 35, "starts at 35")
         check(TimerMath.displayMinutes(secondsRemaining: 34 * 60 + 59, intervalMinutes: 35) == 35, "holds the five-minute bucket")
@@ -31,6 +57,37 @@ enum CSVCodecTests {
         let progress = TimerMath.steppedProgress(secondsRemaining: 30 * 60, intervalMinutes: 35)
         check(abs(progress - (5.0 / 35.0)) < 0.000_001, "ring steps with the label")
         print("Bell behavior checks passed")
+    }
+
+    @MainActor
+    private static func checkLogMigrationAndAppend(
+        canceledRecord: FocusRecord,
+        completedRecord: FocusRecord
+    ) {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appendingPathComponent("BellTests-\(UUID().uuidString)", isDirectory: true)
+        try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: directory) }
+
+        let logURL = directory.appendingPathComponent("focus-log.csv")
+        let legacyContents = CSVCodec.legacyHeader + "\n"
+            + "2026-01-01T00:00:00Z,2026-01-01T00:00:12Z,30,committed,Legacy goal\n"
+        try? legacyContents.write(to: logURL, atomically: true, encoding: .utf8)
+
+        let log = FocusLog(fileManager: fileManager, directoryURL: directory)
+        let migrated = (try? String(contentsOf: log.fileURL, encoding: .utf8)) ?? ""
+        let backup = directory.appendingPathComponent("focus-log-legacy.csv")
+        check(migrated.hasPrefix(CSVCodec.header), "new log header")
+        check(migrated.contains(",,30,,started,Legacy goal\n"), "legacy status remains honest")
+        check(fileManager.fileExists(atPath: backup.path), "legacy backup")
+
+        try? log.append(canceledRecord)
+        try? log.append(completedRecord)
+        let appended = (try? String(contentsOf: log.fileURL, encoding: .utf8)) ?? ""
+        check(appended.contains(",45,12m 34s,canceled,Ship Bell\n"), "canceled append")
+        check(appended.contains(",45,45m,completed ✓,Ship Bell\n"), "completed append")
+        check(log.latestGoal() == "Ship Bell", "latest goal")
     }
 
     private static func check(_ condition: @autoclosure () -> Bool, _ label: String) {

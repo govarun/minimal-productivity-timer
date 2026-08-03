@@ -227,9 +227,7 @@ struct PromptView: View {
     }
 
     private var quitButton: some View {
-        Button {
-            NSApplication.shared.terminate(nil)
-        } label: {
+        Button(action: timer.quit) {
             Image(systemName: "xmark")
                 .font(.system(size: 10, weight: .regular))
                 .foregroundStyle(Color(white: 0.46).opacity(0.88))
