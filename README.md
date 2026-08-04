@@ -43,7 +43,7 @@ pkill -x Bell
 - Timer and editor share one fixed 210 × 196 overlay footprint, preventing edge overflow when states change
 - Silent, draggable, always-on-top overlay across Spaces
 - Black, gray, and white only
-- Local CSV at `~/Library/Application Support/Bell/focus-log.csv`, with `completed ✓` and clean canceled durations such as `12m 34s`
+- Local CSV at `~/Library/Application Support/Bell/focus-log.csv`, with local-time timestamps, `completed ✓`, and clean canceled durations such as `13m`
 - No accounts, analytics, network requests, or cloud storage
 
 The exact interaction contract lives in [BEHAVIOR.md](BEHAVIOR.md).

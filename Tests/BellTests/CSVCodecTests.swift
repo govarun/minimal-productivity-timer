@@ -20,7 +20,8 @@ enum CSVCodecTests {
             outcome: .canceled
         )
         let canceledRow = CSVCodec.row(for: canceledRecord)
-        check(canceledRow.contains(",45,12m 34s,canceled,Ship Bell\n"), "clean canceled row")
+        check(canceledRow.contains(",45,13m,canceled,Ship Bell\n"), "clean canceled row")
+        check(!canceledRow.contains("T22:13"), "local timestamp instead of ISO")
 
         let completedRecord = FocusRecord(
             startedAt: instant,
@@ -33,16 +34,36 @@ enum CSVCodecTests {
         let completedRow = CSVCodec.row(for: completedRecord)
         check(completedRow.contains(",45,45m,completed ✓,Ship Bell\n"), "completed marker")
 
-        check(CSVCodec.formattedDuration(seconds: 0) == "0s", "zero duration")
-        check(CSVCodec.formattedDuration(seconds: 59) == "59s", "seconds duration")
+        check(CSVCodec.formattedDuration(seconds: 0) == "0m", "zero duration")
+        check(CSVCodec.formattedDuration(seconds: 59) == "<1m", "sub-minute duration")
         check(CSVCodec.formattedDuration(seconds: 60) == "1m", "minute duration")
-        check(CSVCodec.formattedDuration(seconds: 3_667) == "1h 1m 7s", "hour duration")
+        check(CSVCodec.formattedDuration(seconds: 754) == "13m", "rounded duration")
+        check(CSVCodec.formattedDuration(seconds: 3_667) == "1h 1m", "hour duration")
+
+        let pacific = TimeZone(identifier: "America/Los_Angeles")!
+        let pacificTimestamp = CSVCodec.formattedTimestamp(
+            instant,
+            locale: Locale(identifier: "en_US"),
+            timeZone: pacific
+        )
+        let normalizedWhitespace = pacificTimestamp
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+        check(normalizedWhitespace == "Nov 14, 2023 at 2:13 PM PST", "readable Pacific timestamp")
 
         let legacy = "2026-01-01T00:00:00Z,2026-01-01T00:00:12Z,30,committed,Ship Bell"
-        check(
-            CSVCodec.migratedLegacyRow(legacy) == "2026-01-01T00:00:12Z,,30,,started,Ship Bell\n",
-            "legacy row migration"
-        )
+        let migratedLegacy = CSVCodec.migratedLegacyRow(legacy) ?? ""
+        let migratedLegacyFields = CSVCodec.parseLine(String(migratedLegacy.dropLast()))
+        check(migratedLegacyFields.count == 6, "legacy row columns")
+        check(!migratedLegacyFields[0].contains("T00:00"), "legacy timestamp localization")
+        check(migratedLegacyFields[4] == "started", "legacy row migration")
+
+        let previousRow = "2026-01-01T00:00:00Z,2026-01-01T00:12:34Z,30,12m 34s,canceled,Ship Bell"
+        let normalizedRow = CSVCodec.normalizedCurrentRow(previousRow) ?? ""
+        let normalizedFields = CSVCodec.parseLine(String(normalizedRow.dropLast()))
+        check(normalizedFields.count == 6, "normalized row columns")
+        check(!normalizedFields[0].contains("T00:00"), "existing timestamp localization")
+        check(normalizedFields[3] == "13m", "existing duration cleanup")
 
         checkLogMigrationAndAppend(canceledRecord: canceledRecord, completedRecord: completedRecord)
 
@@ -85,7 +106,7 @@ enum CSVCodecTests {
         try? log.append(canceledRecord)
         try? log.append(completedRecord)
         let appended = (try? String(contentsOf: log.fileURL, encoding: .utf8)) ?? ""
-        check(appended.contains(",45,12m 34s,canceled,Ship Bell\n"), "canceled append")
+        check(appended.contains(",45,13m,canceled,Ship Bell\n"), "canceled append")
         check(appended.contains(",45,45m,completed ✓,Ship Bell\n"), "completed append")
         check(log.latestGoal() == "Ship Bell", "latest goal")
     }

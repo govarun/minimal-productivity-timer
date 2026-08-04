@@ -38,11 +38,9 @@ enum CSVCodec {
     static let legacyHeader = "prompted_at,answered_at,interval_minutes,outcome,goal"
 
     static func row(for record: FocusRecord) -> String {
-        let timestamp = ISO8601DateFormatter()
-        timestamp.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return [
-            timestamp.string(from: record.startedAt),
-            timestamp.string(from: record.endedAt),
+            escape(formattedTimestamp(record.startedAt)),
+            escape(formattedTimestamp(record.endedAt)),
             String(record.plannedMinutes),
             formattedDuration(seconds: record.elapsedSeconds),
             record.outcome.rawValue,
@@ -52,29 +50,97 @@ enum CSVCodec {
 
     static func formattedDuration(seconds: Int) -> String {
         let safeSeconds = max(0, seconds)
-        let hours = safeSeconds / 3_600
-        let minutes = (safeSeconds % 3_600) / 60
-        let remainingSeconds = safeSeconds % 60
-        var parts: [String] = []
+        guard safeSeconds > 0 else { return "0m" }
+        guard safeSeconds >= 60 else { return "<1m" }
 
-        if hours > 0 { parts.append("\(hours)h") }
-        if minutes > 0 { parts.append("\(minutes)m") }
-        if remainingSeconds > 0 || parts.isEmpty { parts.append("\(remainingSeconds)s") }
+        let roundedMinutes = Int((Double(safeSeconds) / 60).rounded())
+        let hours = roundedMinutes / 60
+        let minutes = roundedMinutes % 60
 
-        return parts.joined(separator: " ")
+        if hours > 0, minutes > 0 { return "\(hours)h \(minutes)m" }
+        if hours > 0 { return "\(hours)h" }
+        return "\(minutes)m"
+    }
+
+    static func formattedTimestamp(
+        _ date: Date,
+        locale: Locale = .autoupdatingCurrent,
+        timeZone: TimeZone = .autoupdatingCurrent
+    ) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.timeZone = timeZone
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+
+        let zone = timeZone.abbreviation(for: date) ?? timeZone.identifier
+        return "\(formatter.string(from: date)) \(zone)"
     }
 
     static func migratedLegacyRow(_ line: String) -> String? {
         let fields = parseLine(line)
         guard fields.count >= 5 else { return nil }
         return [
-            fields[1],
+            escape(normalizedTimestamp(fields[1])),
             "",
             fields[2],
             "",
             "started",
             escape(fields[4])
         ].joined(separator: ",") + "\n"
+    }
+
+    static func normalizedCurrentRow(_ line: String) -> String? {
+        let fields = parseLine(line)
+        guard fields.count == 6 else { return nil }
+
+        return [
+            escape(normalizedTimestamp(fields[0])),
+            escape(normalizedTimestamp(fields[1])),
+            escape(fields[2]),
+            escape(normalizedDuration(fields[3])),
+            escape(fields[4]),
+            escape(fields[5])
+        ].joined(separator: ",") + "\n"
+    }
+
+    private static func normalizedTimestamp(_ value: String) -> String {
+        guard !value.isEmpty else { return value }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: value) {
+            return formattedTimestamp(date)
+        }
+
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: value) {
+            return formattedTimestamp(date)
+        }
+
+        return value
+    }
+
+    private static func normalizedDuration(_ value: String) -> String {
+        guard !value.isEmpty, value != "<1m" else { return value }
+
+        var seconds = 0
+        var foundComponent = false
+        for component in value.split(separator: " ") {
+            guard let suffix = component.last else { continue }
+            let number = component.dropLast()
+            guard let amount = Int(number) else { continue }
+
+            switch suffix {
+            case "h": seconds += amount * 3_600
+            case "m": seconds += amount * 60
+            case "s": seconds += amount
+            default: continue
+            }
+            foundComponent = true
+        }
+
+        return foundComponent ? formattedDuration(seconds: seconds) : value
     }
 
     static func parseLine(_ line: String) -> [String] {

@@ -35,7 +35,8 @@ Bell is a silent, top-right focus timer that stays out of the way until a work b
 ## Logging
 
 - Append one row when a block ends, with: start time, end time, planned minutes, clean elapsed time, status, and goal.
-- Completed blocks use the explicit status `completed ✓`; canceled blocks use `canceled` and show their actual elapsed time, such as `12m 34s`.
+- Times use the Mac's local, minute-level format with a timezone label, such as `Aug 3, 2026 at 2:15 PM PDT`.
+- Completed blocks use the explicit status `completed ✓`; canceled blocks use `canceled` and show rounded elapsed minutes, such as `13m`.
 - Editing, restarting, changing duration, ringing now, or quitting ends the active block as canceled; zero-length interruptions are omitted.
 - Migrate legacy goal-start rows to `started` without guessing whether they completed, and retain a local legacy backup.
 - CSV remains spreadsheet-compatible and local by default.

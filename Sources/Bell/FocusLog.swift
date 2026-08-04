@@ -21,6 +21,7 @@ final class FocusLog {
         } else {
             migrateLegacyLogIfNeeded()
         }
+        normalizeCurrentLogIfNeeded()
         migratePendingRowsIfNeeded()
     }
 
@@ -66,13 +67,28 @@ final class FocusLog {
         else { return }
 
         let lines = contents.split(whereSeparator: \.isNewline).map(String.init)
-        guard lines.contains(where: { CSVCodec.parseLine($0).count == 5 }) else { return }
-
         let migratedRows = lines.compactMap { line -> String? in
             let fields = CSVCodec.parseLine(line)
-            return fields.count == 5 ? CSVCodec.migratedLegacyRow(line) : line + "\n"
+            return fields.count == 5
+                ? CSVCodec.migratedLegacyRow(line)
+                : CSVCodec.normalizedCurrentRow(line)
         }
-        try? migratedRows.joined().write(to: pendingURL, atomically: true, encoding: .utf8)
+        let normalizedContents = migratedRows.joined()
+        if normalizedContents != contents {
+            try? normalizedContents.write(to: pendingURL, atomically: true, encoding: .utf8)
+        }
+    }
+
+    private func normalizeCurrentLogIfNeeded() {
+        guard let contents = try? String(contentsOf: fileURL, encoding: .utf8) else { return }
+        let lines = contents.split(whereSeparator: \.isNewline).map(String.init)
+        guard lines.first == CSVCodec.header.trimmingCharacters(in: .newlines) else { return }
+
+        let normalizedRows = lines.dropFirst().compactMap(CSVCodec.normalizedCurrentRow)
+        let normalizedContents = CSVCodec.header + normalizedRows.joined()
+        if normalizedContents != contents {
+            try? normalizedContents.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
     }
 
     private func flushPendingRows() throws {
