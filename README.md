@@ -65,6 +65,6 @@ Shortcuts work while the goal editor is visible and Bell is the active app.
 
 ```bash
 swift build
-swiftc Sources/Bell/FocusRecord.swift Sources/Bell/FocusLog.swift Sources/Bell/TimerMath.swift Tests/BellTests/CSVCodecTests.swift -o .build/bell-tests
+swiftc Sources/Bell/FocusRecord.swift Sources/Bell/FocusLog.swift Sources/Bell/TimerMath.swift Sources/Bell/WindowPlacement.swift Tests/BellTests/CSVCodecTests.swift -o .build/bell-tests
 .build/bell-tests
 ```

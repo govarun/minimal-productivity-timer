@@ -77,6 +77,27 @@ enum CSVCodecTests {
 
         let progress = TimerMath.steppedProgress(secondsRemaining: 30 * 60, intervalMinutes: 35)
         check(abs(progress - (5.0 / 35.0)) < 0.000_001, "ring steps with the label")
+
+        let visibleFrame = CGRect(x: 0, y: 0, width: 1_728, height: 1_084)
+        let strandedFrame = CGRect(x: 4, y: -180, width: 210, height: 228)
+        check(
+            WindowPlacement.clampedOrigin(for: strandedFrame, within: visibleFrame) == CGPoint(x: 4, y: 0),
+            "off-screen window returns to visible area"
+        )
+        let validFrame = CGRect(x: 1_400, y: 700, width: 210, height: 228)
+        check(
+            WindowPlacement.clampedOrigin(for: validFrame, within: visibleFrame) == validFrame.origin,
+            "valid saved position remains unchanged"
+        )
+        let secondDisplay = CGRect(x: 1_728, y: 0, width: 1_920, height: 1_080)
+        check(
+            WindowPlacement.bestVisibleFrame(
+                for: CGRect(x: 1_900, y: 500, width: 210, height: 228),
+                screenFrames: [visibleFrame, secondDisplay],
+                fallback: visibleFrame
+            ) == secondDisplay,
+            "nearest display wins"
+        )
         print("Bell behavior checks passed")
     }
 

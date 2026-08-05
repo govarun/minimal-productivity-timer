@@ -304,7 +304,27 @@ struct PromptView: View {
             let visible = screen.visibleFrame
             window.setFrameOrigin(NSPoint(x: visible.maxX - window.frame.width - 24, y: visible.maxY - window.frame.height - 24))
         }
+        keepWindowOnScreen(window)
         window.orderFrontRegardless()
+    }
+
+    private func keepWindowOnScreen(_ window: NSWindow) {
+        let screens = NSScreen.screens
+        let activeScreen = screens.first {
+            NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
+        } ?? NSScreen.main
+        let visibleFrames = screens.map(\.visibleFrame)
+
+        guard let visibleFrame = WindowPlacement.bestVisibleFrame(
+            for: window.frame,
+            screenFrames: visibleFrames,
+            fallback: activeScreen?.visibleFrame
+        ) else { return }
+
+        let origin = WindowPlacement.clampedOrigin(for: window.frame, within: visibleFrame)
+        if origin != window.frame.origin {
+            window.setFrameOrigin(origin)
+        }
     }
 }
 

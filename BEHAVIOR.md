@@ -26,6 +26,7 @@ Bell is a silent, top-right focus timer that stays out of the way until a work b
 ## Controls
 
 - The overlay is draggable and starts in the top-right.
+- A saved position is preserved when valid; after monitor or resolution changes, launch clamps the full overlay back into the nearest visible screen.
 - The overlay window is always **210 × 196 points**. The 180-point circle and the 180 × 152-point editor swap inside that fixed footprint, so changing states never moves or expands beyond the screen edge.
 - While the editor is visible and Bell is active: `⌘0` focuses the goal, `⌘1` selects 30 minutes, `⌘2` selects 45 minutes, `⌘3` selects 60 minutes, `⌘4` focuses custom minutes, and `⌘↩` starts the timer.
 - These editor shortcuts are never global and do nothing while the quiet timer is showing.
